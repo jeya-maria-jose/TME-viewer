@@ -4,7 +4,7 @@ Local web viewer for tissue image viewing of H&E and IHC/mIF.
 
 ## Demo
 <!-- DEMO_VIDEO_START -->
-[![TME-viewer demo](./media/demo-preview.svg)](https://drive.google.com/file/d/1FZRKPvkzHbVtDJnvB13a-mBqelZFJE2j/view?usp=sharing)
+[![TME-viewer demo](https://drive.google.com/thumbnail?id=1FZRKPvkzHbVtDJnvB13a-mBqelZFJE2j&sz=w1200)](https://drive.google.com/file/d/1FZRKPvkzHbVtDJnvB13a-mBqelZFJE2j/view?usp=sharing)
 
 <sub><a href="https://drive.google.com/file/d/1FZRKPvkzHbVtDJnvB13a-mBqelZFJE2j/view?usp=sharing">Watch demo video</a></sub>
 <!-- DEMO_VIDEO_END -->

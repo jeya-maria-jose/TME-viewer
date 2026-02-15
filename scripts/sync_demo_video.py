@@ -13,7 +13,8 @@ start = "<!-- DEMO_VIDEO_START -->"
 end = "<!-- DEMO_VIDEO_END -->"
 block = (
     f"{start}\n"
-    f'<video src="{url}" controls muted playsinline width="100%"></video>\n'
+    f'[![TME-viewer demo](./media/demo-preview.svg)]({url})\n\n'
+    f'<sub><a href="{url}">Watch demo video</a></sub>\n'
     f"{end}"
 )
 
@@ -26,4 +27,4 @@ else:
     raise SystemExit("README markers not found")
 
 readme.write_text(updated, encoding="utf-8")
-print("README demo video updated")
+print("README demo block updated")

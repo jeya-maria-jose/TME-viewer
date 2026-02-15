@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="TME-viewer demo preview">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0f7f52"/>
+      <stop offset="1" stop-color="#123d2f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <rect x="40" y="40" width="1120" height="595" rx="18" fill="#ffffff" opacity="0.14"/>
+  <text x="80" y="120" fill="#e8fff6" font-size="54" font-family="Arial, Helvetica, sans-serif" font-weight="700">TME-viewer Demo</text>
+  <text x="80" y="170" fill="#d7f5ea" font-size="28" font-family="Arial, Helvetica, sans-serif">H&E + mIF/IHC side-by-side visualization</text>
+  <circle cx="600" cy="360" r="88" fill="#ffffff" opacity="0.94"/>
+  <polygon points="575,315 575,405 655,360" fill="#0f7f52"/>
+  <text x="80" y="585" fill="#d7f5ea" font-size="24" font-family="Arial, Helvetica, sans-serif">Click to watch video</text>
+</svg>

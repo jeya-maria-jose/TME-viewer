@@ -593,6 +593,57 @@
     function renderPairs() {
       pairsWrapEl.innerHTML = '';
 
+      if (slotOrder.length === 0) {
+        const row = document.createElement('div');
+        row.className = 'pairRow';
+
+        const grid = document.createElement('div');
+        grid.className = 'pairGrid';
+
+        const heCard = document.createElement('div');
+        heCard.className = 'viewer';
+        const heTitle = document.createElement('h3');
+        heTitle.textContent = 'H&E';
+        const heHolder = document.createElement('div');
+        heHolder.className = 'imgHolder';
+        const heImg = document.createElement('img');
+        heImg.alt = 'H&E';
+        heImg.src = heSrc;
+        heImg.addEventListener('load', () => {
+          if (fitOnNextHeLoad) {
+            resetViewToFit();
+            fitOnNextHeLoad = false;
+          }
+          applyTransform();
+        });
+        heHolder.appendChild(heImg);
+        heCard.appendChild(heTitle);
+        heCard.appendChild(heHolder);
+
+        const imgCard = document.createElement('div');
+        imgCard.className = 'viewer';
+        const imgTitle = document.createElement('h3');
+        imgTitle.textContent = 'mIF/IHC (not loaded)';
+        const imgHolder = document.createElement('div');
+        imgHolder.className = 'imgHolder';
+        const msg = document.createElement('div');
+        msg.className = 'channelNote';
+        msg.style.padding = '12px';
+        msg.textContent = 'No image loaded. Add an Image path if needed.';
+        imgHolder.appendChild(msg);
+        imgCard.appendChild(imgTitle);
+        imgCard.appendChild(imgHolder);
+
+        grid.appendChild(heCard);
+        grid.appendChild(imgCard);
+        row.appendChild(grid);
+        pairsWrapEl.appendChild(row);
+
+        attachPanZoom(heHolder);
+        applyTransform();
+        return;
+      }
+
       slotOrder.forEach((slotId) => {
         const slot = slots[slotId];
 
@@ -708,8 +759,8 @@
     async function loadImages() {
       const hePath = hePathEl.value.trim();
       const imagePaths = getImagePathList();
-      if (!hePath || imagePaths.length === 0) {
-        setStatus('H&E path and at least one Image path are required.', true);
+      if (!hePath) {
+        setStatus('H&E path is required.', true);
         return;
       }
 
@@ -752,7 +803,8 @@
         renderPairs();
         syncRowsFromSlots();
 
-        setStatus(`Loaded ${slotOrder.length} image window(s).`);
+        if (slotOrder.length === 0) setStatus('Loaded H&E only.');
+        else setStatus(`Loaded ${slotOrder.length} image window(s).`);
       } catch (err) {
         setStatus(String(err), true);
       }

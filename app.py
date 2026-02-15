@@ -469,8 +469,6 @@ def _load_images(
     he_abs = os.path.abspath(os.path.expanduser(he_path))
     if not os.path.exists(he_abs):
         raise FileNotFoundError(f"H&E file does not exist: {he_abs}")
-    if not image_paths:
-        raise ValueError("At least one image path is required")
 
     he_preview, he_shape, he_step, he_source = _read_he_generic(he_abs, max_dim=max_dim)
 
@@ -620,7 +618,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _serve_state(self) -> None:
-        loaded = STATE.he_preview is not None and len(STATE.image_slots) > 0
+        loaded = STATE.he_preview is not None
         payload = {
             "loaded": loaded,
             "he_path": STATE.he_path,
@@ -711,8 +709,6 @@ class Handler(BaseHTTPRequestHandler):
 
             if not he_path:
                 raise ValueError("he_path is required")
-            if not image_paths:
-                raise ValueError("At least one image path is required")
 
             info = _load_images(
                 he_path, image_paths, max_dim=max_dim, fallback_names=fallback_channel_names

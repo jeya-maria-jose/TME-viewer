@@ -1,0 +1,4 @@
+numpy
+Pillow
+tifffile
+openslide-python

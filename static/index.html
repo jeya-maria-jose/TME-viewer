@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TME-viewer</title>
+  <style>
+    :root {
+      --bg: #eef6f3;
+      --card: #ffffff;
+      --ink: #14211b;
+      --muted: #5d6d66;
+      --line: #cfe0d8;
+      --accent: #0f7f52;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 7% 10%, #d5efe3 0, transparent 25%),
+        radial-gradient(circle at 92% 88%, #f4ead9 0, transparent 22%),
+        var(--bg);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    #moleculeBg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .molecule {
+      position: absolute;
+      border: 1px solid rgba(20, 80, 60, 0.18);
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 25%, rgba(20, 180, 120, 0.22), rgba(20, 100, 200, 0.08));
+      animation: drift linear infinite;
+    }
+    @keyframes drift {
+      0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.25; }
+      50% { opacity: 0.45; }
+      100% { transform: translateY(-120vh) translateX(30px) rotate(180deg); opacity: 0.15; }
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1760px;
+      margin: 18px auto;
+      padding: 0 16px 24px;
+    }
+    .panel {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(18, 43, 32, 0.09);
+      padding: 14px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #173229;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: 1fr 220px auto auto auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 8px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font-size: 14px;
+      background: #fbfdfc;
+      font-family: inherit;
+    }
+    .field textarea {
+      min-height: 66px;
+      resize: vertical;
+    }
+
+    .imageRows {
+      margin: 8px 0;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      background: #fbfdfc;
+      display: grid;
+      gap: 8px;
+    }
+    .imageRow {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .rowLabel {
+      font-size: 12px;
+      color: #2c4338;
+      width: 64px;
+    }
+    .imagePathInput {
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-size: 14px;
+      background: #fff;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #loadBtn { background: var(--accent); color: #fff; font-weight: 600; }
+    #clearBtn, #resetViewBtn {
+      background: #f1f4f2;
+      color: #2f4138;
+      border: 1px solid var(--line);
+    }
+    #addImageBtn {
+      background: #f1f8f4;
+      border: 1px solid #c7dfd3;
+      color: #2f4138;
+      padding: 9px 12px;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    #applyNamesBtn {
+      background: #f1f8f4;
+      border: 1px solid #c7dfd3;
+      color: #2f4138;
+      padding: 9px 12px;
+      font-size: 13px;
+      margin-top: 6px;
+      margin-left: 8px;
+    }
+    .removeRowBtn {
+      background: #f8f1f1;
+      border: 1px solid #e5cccc;
+      color: #723737;
+      font-size: 12px;
+      padding: 7px 10px;
+    }
+
+    #status {
+      margin: 8px 0 10px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 0;
+    }
+
+    .pairsWrap {
+      display: grid;
+      gap: 14px;
+    }
+    .pairRow {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .pairGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+    }
+    .viewer {
+      background: #f8f9fa;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .viewer h3 {
+      margin: 0;
+      padding: 8px 10px;
+      font-size: 13px;
+      letter-spacing: .02em;
+      color: #30463a;
+      background: #edf3ef;
+      border-bottom: 1px solid var(--line);
+    }
+    .imgHolder {
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+      padding: 8px;
+      cursor: grab;
+      height: 540px;
+      min-height: 540px;
+    }
+    .imgHolder img {
+      position: absolute;
+      left: 0;
+      top: 0;
+      border-radius: 6px;
+      border: 1px solid #e4ebe7;
+      transform-origin: 0 0;
+      will-change: transform;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+      max-width: none;
+    }
+    .imgHolder.dragging { cursor: grabbing; }
+
+    .channelPanel {
+      border-top: 1px solid var(--line);
+      background: #fbfdfc;
+      padding: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 140px;
+      overflow: auto;
+    }
+    .channelNote {
+      font-size: 12px;
+      color: #60726a;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 11px;
+      color: #2f4238;
+    }
+    .chip:hover { border-color: #9cb6a9; background: #eef9f4; }
+    .chip input { margin: 0; }
+    .chipColor {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 1100px) {
+      .top { grid-template-columns: 1fr; }
+      .imageRow { grid-template-columns: 1fr; }
+      .rowLabel { width: auto; }
+      .pairGrid { grid-template-columns: 1fr; }
+      .imgHolder { height: 400px; min-height: 400px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="moleculeBg"></div>
+
+  <div class="page">
+    <div class="panel">
+      <div class="title">TME-viewer</div>
+
+      <div class="top">
+        <div class="field">
+          <label for="hePath">H&E path (png/jpg/tif/tiff/ndpi)</label>
+          <input id="hePath" placeholder="/absolute/path/to/he.ndpi" />
+        </div>
+        <div class="field">
+          <label for="maxDim">Preview max dimension</label>
+          <input id="maxDim" type="number" value="1800" min="512" max="4096" />
+        </div>
+        <button id="loadBtn">Load Images</button>
+        <button id="clearBtn">Clear All Selections</button>
+        <button id="resetViewBtn">Reset View</button>
+      </div>
+
+      <div class="field">
+        <label for="fallbackNames">Channel names (optional)</label>
+        <textarea id="fallbackNames" placeholder='["DAPI", "TRITC", "Cy5", "PD-1", "CD14"]'></textarea>
+        <button id="applyNamesBtn" type="button">Apply Channel Names</button>
+      </div>
+
+      <div class="field">
+        <label>Image (IHC/mIF tiff/ndpi/ome.tiff) path</label>
+        <div id="imageRows" class="imageRows"></div>
+        <button id="addImageBtn" type="button">+ Add Image Tab</button>
+      </div>
+
+      <div id="status"></div>
+      <div id="pairsWrap" class="pairsWrap"></div>
+    </div>
+  </div>
+
+  <script>
+    const hePathEl = document.getElementById('hePath');
+    const maxDimEl = document.getElementById('maxDim');
+    const fallbackNamesEl = document.getElementById('fallbackNames');
+    const loadBtn = document.getElementById('loadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const resetViewBtn = document.getElementById('resetViewBtn');
+    const applyNamesBtn = document.getElementById('applyNamesBtn');
+    const addImageBtn = document.getElementById('addImageBtn');
+    const imageRowsEl = document.getElementById('imageRows');
+    const statusEl = document.getElementById('status');
+    const pairsWrapEl = document.getElementById('pairsWrap');
+
+    const slots = {};
+    const CHANNEL_COLORS = [
+      [0, 102, 255],
+      [255, 96, 32],
+      [220, 30, 180],
+      [80, 220, 255],
+      [150, 255, 120],
+      [255, 170, 0],
+      [190, 120, 255],
+      [255, 70, 120],
+      [0, 210, 160],
+      [255, 215, 65],
+      [135, 200, 255],
+      [255, 120, 180],
+      [100, 255, 70],
+      [235, 130, 40],
+      [170, 170, 255],
+      [255, 95, 95],
+      [90, 255, 220],
+      [250, 200, 40],
+      [120, 220, 130],
+      [255, 145, 55],
+      [190, 90, 255],
+      [255, 115, 150],
+      [110, 230, 255],
+    ];
+    let slotOrder = [];
+    let heSrc = '';
+    let fitOnNextHeLoad = false;
+    let dragging = false;
+    let dragStart = { x: 0, y: 0, tx: 0, ty: 0 };
+    let view = { scale: 1, tx: 0, ty: 0 };
+    let appliedChannelNames = [];
+
+    function setStatus(text, isError=false) {
+      statusEl.textContent = text;
+      statusEl.style.color = isError ? '#b12323' : '#5d6d66';
+    }
+    function bust(url) { return `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`; }
+
+    function createMoleculeBackground() {
+      const bg = document.getElementById('moleculeBg');
+      for (let i = 0; i < 22; i++) {
+        const el = document.createElement('div');
+        el.className = 'molecule';
+        const size = 14 + Math.random() * 30;
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        el.style.left = `${Math.random() * 100}%`;
+        el.style.top = `${100 + Math.random() * 25}%`;
+        el.style.animationDuration = `${18 + Math.random() * 18}s`;
+        el.style.animationDelay = `${Math.random() * 12}s`;
+        bg.appendChild(el);
+      }
+    }
+
+    function slotLabel(slotId) { return `mIF/IHC ${Number(slotId) + 1}`; }
+    function selectedList(slotId) { return [...(slots[slotId]?.selected || new Set())].sort((a,b)=>a-b); }
+    function isGenericChannelName(name) {
+      const s = String(name || '').trim().toLowerCase();
+      if (!s) return true;
+      return /^(?:(?:channel|ch|c)[\\s:_-]*)?\\d+(?:[\\s:_-]*\\d+)*$/.test(s);
+    }
+    function displayChannelName(i, slotId) {
+      const names = slots[slotId]?.names || [];
+      const raw = names[i] || '';
+      const override = appliedChannelNames[i] || '';
+      if (override) return override;
+      return raw || `Channel-${i+1}`;
+    }
+    function channelLabel(i, slotId) {
+      return `${i + 1}. ${displayChannelName(i, slotId)}`;
+    }
+
+    function getAllHolders() {
+      const out = [];
+      slotOrder.forEach((slotId) => {
+        const s = slots[slotId];
+        if (s.heHolderEl) out.push(s.heHolderEl);
+        if (s.imgHolderEl) out.push(s.imgHolderEl);
+      });
+      return out;
+    }
+    function getAllImages() {
+      const out = [];
+      slotOrder.forEach((slotId) => {
+        const s = slots[slotId];
+        if (s.heImgEl) out.push(s.heImgEl);
+        if (s.imgEl) out.push(s.imgEl);
+      });
+      return out;
+    }
+
+    function applyTransform() {
+      const t = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+      getAllImages().forEach((img) => { img.style.transform = t; });
+    }
+
+    function resetViewToFit() {
+      if (!slotOrder.length) return;
+      const first = slots[slotOrder[0]];
+      if (!first?.heImgEl || !first?.heHolderEl) return;
+      if (!first.heImgEl.naturalWidth || !first.heImgEl.naturalHeight) return;
+
+      const w = first.heHolderEl.clientWidth - 16;
+      const h = first.heHolderEl.clientHeight - 16;
+      if (w <= 0 || h <= 0) return;
+
+      const fit = Math.min(w / first.heImgEl.naturalWidth, h / first.heImgEl.naturalHeight);
+      view.scale = Math.max(0.2, Math.min(20, fit));
+      view.tx = 8 + (w - first.heImgEl.naturalWidth * view.scale) / 2;
+      view.ty = 8 + (h - first.heImgEl.naturalHeight * view.scale) / 2;
+      applyTransform();
+    }
+
+    function zoomAt(clientX, clientY, deltaY, holder) {
+      const rect = holder.getBoundingClientRect();
+      const px = clientX - rect.left - 8;
+      const py = clientY - rect.top - 8;
+      const old = view.scale;
+      const factor = deltaY < 0 ? 1.12 : 1 / 1.12;
+      const next = Math.max(0.2, Math.min(20, old * factor));
+      if (next === old) return;
+      view.tx = px - (px - view.tx) * (next / old);
+      view.ty = py - (py - view.ty) * (next / old);
+      view.scale = next;
+      applyTransform();
+    }
+
+    function setDraggingClass(on) {
+      getAllHolders().forEach((h) => h.classList.toggle('dragging', on));
+    }
+
+    function attachPanZoom(holder) {
+      holder.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        zoomAt(e.clientX, e.clientY, e.deltaY, holder);
+      }, { passive: false });
+
+      holder.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        dragging = true;
+        dragStart = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty };
+        setDraggingClass(true);
+      });
+    }
+
+    function addImagePathRow(value='') {
+      const row = document.createElement('div');
+      row.className = 'imageRow';
+
+      const label = document.createElement('div');
+      label.className = 'rowLabel';
+      label.textContent = `Image ${imageRowsEl.children.length + 1}`;
+
+      const input = document.createElement('input');
+      input.className = 'imagePathInput';
+      input.placeholder = 'Image (IHC/mIF tiff/ndpi/ome.tiff) path';
+      input.value = value;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'removeRowBtn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => {
+        row.remove();
+        relabelRows();
+      });
+
+      row.appendChild(label);
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      imageRowsEl.appendChild(row);
+      relabelRows();
+    }
+
+    function relabelRows() {
+      [...imageRowsEl.children].forEach((row, i) => {
+        row.querySelector('.rowLabel').textContent = `Image ${i + 1}`;
+      });
+    }
+
+    function getImagePathList() {
+      return [...imageRowsEl.querySelectorAll('.imagePathInput')]
+        .map((el) => el.value.trim())
+        .filter(Boolean);
+    }
+
+    function parseFallbackNames() {
+      const raw = fallbackNamesEl.value.trim();
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) throw new Error('Fallback names must be a JSON array.');
+        return parsed.map((v) => String(v).trim()).filter(Boolean);
+      } catch (e) {
+        // Fallback parser for Python-like lists:
+        // ['DAPI', 'TRITC', # comment ...]
+        // Also supports double-quoted tokens.
+        const noComments = raw
+          .split('\n')
+          .map((line) => line.replace(/#.*$/, ''))
+          .join('\n');
+
+        const tokens = [];
+        const re = /'([^'\\]*(?:\\.[^'\\]*)*)'|\"([^\"\\]*(?:\\.[^\"\\]*)*)\"/g;
+        let m;
+        while ((m = re.exec(noComments)) !== null) {
+          const token = (m[1] ?? m[2] ?? '').trim();
+          if (token) tokens.push(token);
+        }
+        if (tokens.length > 0) return tokens;
+
+        throw new Error(`Invalid fallback channel names JSON: ${e.message}`);
+      }
+    }
+
+    function applyChannelNamesFromInput() {
+      let names;
+      try {
+        names = parseFallbackNames();
+      } catch (e) {
+        setStatus(String(e.message || e), true);
+        return false;
+      }
+      appliedChannelNames = names;
+      if (slotOrder.length > 0) renderPairs();
+      if (appliedChannelNames.length > 0) {
+        setStatus(`Applied ${appliedChannelNames.length} override channel name(s).`);
+      } else {
+        setStatus('Cleared channel-name overrides.');
+      }
+      return true;
+    }
+
+    function syncRowsFromSlots() {
+      const paths = slotOrder.map((id) => slots[id]?.path || '').filter(Boolean);
+      imageRowsEl.innerHTML = '';
+      if (paths.length === 0) addImagePathRow('');
+      else paths.forEach((p) => addImagePathRow(p));
+    }
+
+    function renderSlotImage(slotId) {
+      const slot = slots[slotId];
+      if (!slot || !slot.imgEl || !slot.titleEl) return;
+
+      if (slot.mode === 'rgb') {
+        slot.titleEl.textContent = `${slotLabel(slotId)} (IHC/RGB)`;
+        slot.imgEl.src = bust(`/api/image/${slotId}/base.png`);
+        return;
+      }
+
+      const ids = selectedList(slotId);
+      if (ids.length === 0) {
+        slot.titleEl.textContent = `${slotLabel(slotId)} default channel`;
+        slot.imgEl.src = bust(`/api/image/${slotId}/base.png`);
+        return;
+      }
+
+      const names = ids.map((i) => channelLabel(i, slotId)).join(' + ');
+      slot.titleEl.textContent = `${slotLabel(slotId)} Overlay: ${names}`;
+      slot.imgEl.src = bust(`/api/image/overlay.png?slot=${slotId}&channels=${ids.join(',')}`);
+    }
+
+    function renderPairs() {
+      pairsWrapEl.innerHTML = '';
+
+      slotOrder.forEach((slotId) => {
+        const slot = slots[slotId];
+
+        const row = document.createElement('div');
+        row.className = 'pairRow';
+
+        const grid = document.createElement('div');
+        grid.className = 'pairGrid';
+
+        const heCard = document.createElement('div');
+        heCard.className = 'viewer';
+        const heTitle = document.createElement('h3');
+        heTitle.textContent = 'H&E';
+        const heHolder = document.createElement('div');
+        heHolder.className = 'imgHolder';
+        const heImg = document.createElement('img');
+        heImg.alt = `H&E ${slotLabel(slotId)}`;
+        heImg.src = heSrc;
+        heImg.addEventListener('load', () => {
+          if (fitOnNextHeLoad) {
+            resetViewToFit();
+            fitOnNextHeLoad = false;
+          }
+          applyTransform();
+        });
+        heHolder.appendChild(heImg);
+        heCard.appendChild(heTitle);
+        heCard.appendChild(heHolder);
+
+        const imgCard = document.createElement('div');
+        imgCard.className = 'viewer';
+        const imgTitle = document.createElement('h3');
+        imgTitle.textContent = slotLabel(slotId);
+        const imgHolder = document.createElement('div');
+        imgHolder.className = 'imgHolder';
+        const img = document.createElement('img');
+        img.alt = slotLabel(slotId);
+        img.addEventListener('load', applyTransform);
+        imgHolder.appendChild(img);
+        imgCard.appendChild(imgTitle);
+        imgCard.appendChild(imgHolder);
+
+        grid.appendChild(heCard);
+        grid.appendChild(imgCard);
+        row.appendChild(grid);
+
+        const channelPanel = document.createElement('div');
+        channelPanel.className = 'channelPanel';
+
+        if (slot.mode === 'rgb') {
+          const msg = document.createElement('div');
+          msg.className = 'channelNote';
+          msg.textContent = 'RGB/IHC image (no channel list).';
+          channelPanel.appendChild(msg);
+        } else {
+          slot.names.forEach((name, idx) => {
+            const chip = document.createElement('label');
+            chip.className = 'chip';
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = slot.selected.has(idx);
+            cb.addEventListener('change', () => {
+              if (cb.checked) slot.selected.add(idx);
+              else slot.selected.delete(idx);
+              renderSlotImage(slotId);
+            });
+
+            chip.addEventListener('mouseenter', () => {
+              imgTitle.textContent = `${slotLabel(slotId)} Channel: ${channelLabel(idx, slotId)} (hover preview)`;
+              img.src = bust(`/api/image/${slotId}/channel/${idx}`);
+            });
+
+            chip.addEventListener('mouseleave', () => {
+              renderSlotImage(slotId);
+            });
+
+            const text = document.createElement('span');
+            const swatch = document.createElement('span');
+            swatch.className = 'chipColor';
+            const c = CHANNEL_COLORS[idx % CHANNEL_COLORS.length];
+            swatch.style.backgroundColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+            text.textContent = `${idx + 1}. ${displayChannelName(idx, slotId)}`;
+            chip.appendChild(cb);
+            chip.appendChild(swatch);
+            chip.appendChild(text);
+            channelPanel.appendChild(chip);
+          });
+        }
+
+        row.appendChild(channelPanel);
+        pairsWrapEl.appendChild(row);
+
+        slot.heHolderEl = heHolder;
+        slot.heImgEl = heImg;
+        slot.imgHolderEl = imgHolder;
+        slot.imgEl = img;
+        slot.titleEl = imgTitle;
+
+        attachPanZoom(heHolder);
+        attachPanZoom(imgHolder);
+        renderSlotImage(slotId);
+      });
+
+      applyTransform();
+    }
+
+    function clearAllSelections() {
+      slotOrder.forEach((slotId) => slots[slotId].selected.clear());
+      renderPairs();
+    }
+
+    async function loadImages() {
+      const hePath = hePathEl.value.trim();
+      const imagePaths = getImagePathList();
+      if (!hePath || imagePaths.length === 0) {
+        setStatus('H&E path and at least one Image path are required.', true);
+        return;
+      }
+
+      if (!applyChannelNamesFromInput()) return;
+
+      setStatus('Loading...');
+      try {
+        const resp = await fetch('/api/load', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            he_path: hePath,
+            image_paths: imagePaths,
+            fallback_channel_names: appliedChannelNames,
+            max_dim: Number(maxDimEl.value || 1800),
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'Load failed');
+
+        Object.keys(slots).forEach((k) => delete slots[k]);
+        slotOrder = data.info.slot_order || [];
+        slotOrder.forEach((slotId) => {
+          const s = data.info.slots[slotId];
+          slots[slotId] = {
+            path: s.path || '',
+            mode: s.mode || 'channels',
+            names: s.channel_names || [],
+            selected: new Set(),
+            heHolderEl: null,
+            heImgEl: null,
+            imgHolderEl: null,
+            imgEl: null,
+            titleEl: null,
+          };
+        });
+
+        heSrc = bust('/api/he.png');
+        fitOnNextHeLoad = true;
+        renderPairs();
+        syncRowsFromSlots();
+
+        setStatus(`Loaded ${slotOrder.length} image window(s).`);
+      } catch (err) {
+        setStatus(String(err), true);
+      }
+    }
+
+    async function hydrateState() {
+      try {
+        const resp = await fetch('/api/state');
+        const data = await resp.json();
+        if (!data.loaded) {
+          addImagePathRow('');
+          return;
+        }
+
+        hePathEl.value = data.he_path || '';
+        Object.keys(slots).forEach((k) => delete slots[k]);
+        slotOrder = data.slot_order || [];
+
+        slotOrder.forEach((slotId) => {
+          const s = data.slots[slotId];
+          slots[slotId] = {
+            path: s.path || '',
+            mode: s.mode || 'channels',
+            names: s.channel_names || [],
+            selected: new Set(),
+            heHolderEl: null,
+            heImgEl: null,
+            imgHolderEl: null,
+            imgEl: null,
+            titleEl: null,
+          };
+        });
+
+        syncRowsFromSlots();
+        heSrc = bust('/api/he.png');
+        fitOnNextHeLoad = true;
+        renderPairs();
+        setStatus('Loaded previous session.');
+      } catch {
+        addImagePathRow('');
+      }
+    }
+
+    addImageBtn.addEventListener('click', () => addImagePathRow(''));
+    applyNamesBtn.addEventListener('click', applyChannelNamesFromInput);
+    loadBtn.addEventListener('click', loadImages);
+    clearBtn.addEventListener('click', clearAllSelections);
+    resetViewBtn.addEventListener('click', resetViewToFit);
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      view.tx = dragStart.tx + (e.clientX - dragStart.x);
+      view.ty = dragStart.ty + (e.clientY - dragStart.y);
+      applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      setDraggingClass(false);
+    });
+
+    window.addEventListener('resize', () => {
+      if (!slotOrder.length) return;
+      resetViewToFit();
+    });
+
+    createMoleculeBackground();
+    hydrateState();
+  </script>
+</body>
+</html>

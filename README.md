@@ -3,7 +3,9 @@
 Local web viewer for tissue image viewing of H&E and IHC/mIF.
 
 ## Demo
-<video src="./media/TME-record.mov" controls muted playsinline width="100%"></video>
+<!-- DEMO_VIDEO_START -->
+<video src="https://drive.google.com/file/d/1FZRKPvkzHbVtDJnvB13a-mBqelZFJE2j/view?usp=sharing" controls muted playsinline width="100%"></video>
+<!-- DEMO_VIDEO_END -->
 
 
 ## What it supports
@@ -22,10 +24,6 @@ Local web viewer for tissue image viewing of H&E and IHC/mIF.
   - Drag pan
   - Synchronized between H&E and signal panel
 
-
-## Project structure
-- `app.py`: 
-- `requirements.txt`: 
 
 ## Quick start
 ```bash
